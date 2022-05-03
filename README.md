@@ -7,7 +7,7 @@ requests
 ## 1. 클래스 호출
 ### 설명
 School(Token)
-### 호출
+### 예시 호출
 module = school.School('91d56c2110fa2a2bbb700a11fe6b58be')
 
 ## 2. 급식 확인
