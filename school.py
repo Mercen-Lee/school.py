@@ -1,10 +1,11 @@
 '''
-school.py v1.1 developed by Seok Ho Lee
+school.py v1.2 developed by Seok Ho Lee
 (A.K.A. Mercen Lee)
 Github : https://github.com/Mercen-Lee
 Tistory : https://mercen.net/
 '''
-from requests import get; from re import sub
+from urllib.request import urlopen; from urllib.parse import quote
+from json import loads; from re import sub
 
 class School:
     def __init__(self,token):
@@ -12,27 +13,27 @@ class School:
         self.apiKey = 'Info?KEY='+token+'&Type=json&'
 
     def Info(self,schoolName):
-        schoolJson = get(self.apiUrl+'/school'+self.apiKey+'SCHUL_NM='+schoolName).json()
-        schoolInfo = schoolJson['schoolInfo'][1]['row'][0]
-        schoolBase = 'ATPT_OFCDC_SC_CODE='+schoolInfo['ATPT_OFCDC_SC_CODE']
-        schoolCode = '&SD_SCHUL_CODE='+schoolInfo['SD_SCHUL_CODE']
-        return schoolBase,schoolCode
+        infoLink = self.apiUrl+'/school'+self.apiKey+'SCHUL_NM='+quote(schoolName)
+        infoJson = loads(urlopen(infoLink).read())['schoolInfo'][1]['row'][0]
+        infoBase = 'ATPT_OFCDC_SC_CODE='+infoJson['ATPT_OFCDC_SC_CODE']
+        infoCode = '&SD_SCHUL_CODE='+infoJson['SD_SCHUL_CODE']
+        return infoBase,infoCode
 
     def Class(self,schoolName,schoolGrade,schoolClass,classDate):
-        schoolBase,schoolCode = self.Info(schoolName)
+        infoBase,infoCode = self.Info(schoolName)
         if schoolName.endswith('초등학교'): schoolLevel = 'elsTimetable'
         elif schoolName.endswith('중학교'): schoolLevel = 'misTimetable'
         elif schoolName.endswith('고등학교'): schoolLevel = 'hisTimetable'
         className = '&GRADE='+str(schoolGrade)+'&CLASS_NM='+str(schoolClass)+'&ALL_TI_YMD='+str(classDate)
-        classJson = get(self.apiUrl+schoolLevel+self.apiKey[4:]+schoolBase+schoolCode+className).json()
-        classBase = classJson[schoolLevel][1]['row']; classList = []
-        for x in classBase: classList.append(sub('[-,:.*]','',x['ITRT_CNTNT']).strip())
+        classLink = self.apiUrl+schoolLevel+self.apiKey[4:]+infoBase+infoCode+className
+        classJson = loads(urlopen(classLink).read())[schoolLevel][1]['row']; classList = []
+        for x in classJson: classList.append(sub('[-,:.*]','',x['ITRT_CNTNT']).strip())
         return classList
 
     def Meal(self,schoolName,mealCode,mealDate):
-        schoolBase,schoolCode = self.Info(schoolName)
+        infoBase,infoCode = self.Info(schoolName)
         mealName = '&MLSV_YMD='+str(mealDate)+'&MMEAL_SC_CODE='+str(mealCode)
-        mealJson = get(self.apiUrl+'mealServiceDiet'+self.apiKey+schoolBase+schoolCode+mealName).json()
-        mealBase = mealJson['mealServiceDietInfo'][1]['row'][0]['DDISH_NM'].split('<br/>'); mealList = []
-        for x in mealBase: mealList.append(sub('[-,:.* ]','',x).split('(')[0])
+        mealLink = self.apiUrl+'mealServiceDiet'+self.apiKey+infoBase+infoCode+mealName; mealList = []
+        mealJson = loads(urlopen(mealLink).read())['mealServiceDietInfo'][1]['row'][0]['DDISH_NM']
+        for x in mealJson.split('<br/>'): mealList.append(sub('[-,:.* ]','',x).split('(')[0])
         return mealList
